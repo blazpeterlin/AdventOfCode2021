@@ -1,0 +1,39 @@
+﻿open System
+open Aoc21_Common
+open FParsec
+open System.Diagnostics
+open System.Collections.Generic
+open Microsoft.FSharp.Core.Operators.Checked
+open System.Security.Cryptography
+open System.Text
+
+type ENV = T | P
+let internal (+..) (x0,y0) (x1,y1) = (x0+x1,y0+y1)
+let internal (+...) (x0,y0,z0) (x1,y1,z1) = (x0+x1,y0+y1,z0+z1)
+
+
+// type State = { EL:int; }
+type Operator = PLUS | MINUS | TIMES | DIV
+type Parenthesis = LEFT | RIGHT
+type Lex = Num of int | Op of Operator | Pnt of Parenthesis
+
+type LexState = { Idx:int; ReadingNum:string; }
+
+[<EntryPoint>]
+let main argv =    
+    let env = T
+    let inputFile = env |> function | T -> "test.txt" | P -> "input.txt"
+    
+    let mutable ln = 
+        C.readLines inputFile
+        //|> Seq.head
+        //|> List.map (fun x -> x |> C.splitCh "[]")
+        //|> C.parseList id
+        //|> C.parseMatrix id
+    0
+
+
+
+    0
+    System.Console.ReadKey() |> ignore
+    0 // return an integer exit code

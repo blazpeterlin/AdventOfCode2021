@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <WarnOn>3390;$(WarnOn)</WarnOn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="BinomialHeapPQ.fs" />
+    <Compile Include="PriorityQueue.fs" />
+    <Compile Include="Dijkstra.fs" />
+    <Compile Include="Library.fs" />
+  </ItemGroup>
+
+</Project>
