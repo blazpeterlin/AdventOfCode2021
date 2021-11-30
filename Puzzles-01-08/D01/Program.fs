@@ -11,13 +11,9 @@ type ENV = T | P
 let internal (+..) (x0,y0) (x1,y1) = (x0+x1,y0+y1)
 let internal (+...) (x0,y0,z0) (x1,y1,z1) = (x0+x1,y0+y1,z0+z1)
 
-
 // type State = { EL:int; }
-type Operator = PLUS | MINUS | TIMES | DIV
-type Parenthesis = LEFT | RIGHT
-type Lex = Num of int | Op of Operator | Pnt of Parenthesis
 
-type LexState = { Idx:int; ReadingNum:string; }
+
 
 [<EntryPoint>]
 let main argv =    

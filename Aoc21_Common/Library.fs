@@ -10,6 +10,9 @@ module C =
     //let inline (+?) (x: int) (y: int) = x + 2*y
 
     //let abc = 1 +? 2
+    
+    let toDictionary (map : Map<_, _>) : System.Collections.Generic.Dictionary<_, _> = 
+        System.Collections.Generic.Dictionary(map)
 
     let rec private skipLastEmpty (list:List<string>) =
         match list with
