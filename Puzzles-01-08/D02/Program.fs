@@ -30,17 +30,6 @@ let main argv =
 
     let res1 =
         lns
-        |> Seq.pairwise
-        |> Seq.filter (fun (x,y) ->(int y) >(int x))
-        |> Seq.length
-        
-    let res2 =
-        lns
-        |> List.windowed 3
-        |> List.map (fun (x::y::z::[]) ->(int x)+(int y)+(int z))
-        |> List.pairwise
-        |> Seq.filter (fun (x,y) ->(int y) >(int x))
-        |> Seq.length
             
 
     0
