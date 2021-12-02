@@ -22,16 +22,42 @@ let main argv =
     
     let mutable lns = 
         C.readLines inputFile
+        |> List.map (fun ln -> ln |> C.splitCh " ")
         //|> Seq.head
         //|> List.map (fun x -> x |> C.splitCh "[]")
         //|> C.parseList id
         //|> C.parseMatrix id
     0
 
+
     let res1 =
         lns
-            
+        |> List.map (fun (dir::strNum::[]) -> 
+                    let num = int strNum
+                    match dir with
+                    | "forward" -> (num,0)
+                    | "down" -> (0,num)
+                    | "up" -> (0, -num)
+                    | _ -> failwith "unknown"
+                    )
+        |> List.reduce (+..)
+        |> (fun (x,y) -> x*y)
+        
+    let st0 = (bigint 0,bigint 0,bigint 0)
 
+    let res2tpl =
+        lns
+        |> List.fold (fun (x,y,z) (dir::strNum::[]) -> 
+                    let num = bigint (int strNum)
+                    match dir with
+                    | "forward" -> (x+num,y+num*z,z)
+                    | "down" -> (x,y,z+num)
+                    | "up" -> (x,y,z-num)
+                    | _ -> failwith "unknown"
+                    ) st0
+
+    let res2 = res2tpl |> (fun (x,y,z) -> (x)*(y))
+        
     0
     System.Console.ReadKey() |> ignore
     0 // return an integer exit code
