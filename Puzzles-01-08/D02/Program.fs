@@ -8,7 +8,7 @@ open System.Security.Cryptography
 open System.Text
 
 type ENV = T | P
-let internal (+..) (x0,y0) (x1,y1) = (x0+x1,y0+y1)
+//let internal (+..) (x0,y0) (x1,y1) = (x0+x1,y0+y1)
 let internal (+...) (x0,y0,z0) (x1,y1,z1) = (x0+x1,y0+y1,z0+z1)
 
 // type State = { EL:int; }
@@ -29,6 +29,7 @@ let main argv =
         //|> C.parseMatrix id
     0
 
+    let (+..) (x0,y0) (x1,y1) = (x0+x1,y0+y1)
 
     let res1 =
         lns
@@ -45,16 +46,17 @@ let main argv =
         
     let st0 = (bigint 0,bigint 0,bigint 0)
 
+    let res2transformation = fun (x,y,z) (dir::strNum::[]) -> 
+        let num = bigint (int strNum)
+        match dir with
+        | "forward" -> (x+num,y+num*z,z)
+        | "down" -> (x,y,z+num)
+        | "up" -> (x,y,z-num)
+        | _ -> failwith "unknown"
+
     let res2tpl =
         lns
-        |> List.fold (fun (x,y,z) (dir::strNum::[]) -> 
-                    let num = bigint (int strNum)
-                    match dir with
-                    | "forward" -> (x+num,y+num*z,z)
-                    | "down" -> (x,y,z+num)
-                    | "up" -> (x,y,z-num)
-                    | _ -> failwith "unknown"
-                    ) st0
+        |> List.fold res2transformation st0
 
     let res2 = res2tpl |> (fun (x,y,z) -> (x)*(y))
         
