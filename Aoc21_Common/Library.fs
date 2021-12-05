@@ -97,7 +97,7 @@ module C =
                 let v = morphVal x
                 Console.Write(v.ToString()) 
 
-    let print2dMap (s:Map<(int*int),'T>) =
+    let print2dMap (s:Map<(int*int),'T>) (morphVal:'T->'U) =
         s
         |> Map.toSeq
         |> Seq.groupBy (fst >> fst)
@@ -106,7 +106,7 @@ module C =
                 Console.WriteLine();
                 row
                 |> Seq.sortBy (fst >> snd)
-                |> Seq.iter (fun (pos,elt) -> Console.Write(elt))
+                |> Seq.iter (fun (pos,elt) -> Console.Write(morphVal elt))
             )
         |> List.ofSeq
         |> ignore
@@ -152,3 +152,4 @@ module C =
         match Seq.fold(fun n g->if (gcd n g)=1 then n*g else 0) 1 g with
         |0 -> None
         |fN-> Some ((Seq.fold2(fun n i g -> n+i*(fN/g)*(ModularInverse g ((fN/g)%g))) 0 n g)%fN)
+
