@@ -9,7 +9,7 @@
   <ItemGroup>
     <Compile Include="BinomialHeapPQ.fs" />
     <Compile Include="PriorityQueue.fs" />
-    <Compile Include="Dijkstra.fs" />
+    <Compile Include="AStar.fs" />
     <Compile Include="Library.fs" />
   </ItemGroup>
 

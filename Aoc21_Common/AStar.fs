@@ -4,19 +4,19 @@ namespace Aoc21_Common
 open System.Collections.Generic
 
 
-type DijkstraAlg<'T> = 
+type AStarAlg<'T> = 
     { pq: (PathPart<'T> list) BinomialHeapPQ.outerheap; heuristic: 'T->int; } 
 
-type DijkstraVisited<'T,'U> when 'U:comparison =
+type AStarVisited<'T,'U> when 'U:comparison =
     { mutable visited: Set<'U>; state2visited: 'T->'U; }
 
 [<StructuredFormatDisplay("COST={TotalCost} H={Heuristic} | {State}")>]
-type DijkstraResult<'T> =
+type AStarResult<'T> =
     { IsGoal: bool; State:'T; TotalCost: int; Heuristic: int; ChainReverse: PathPart<'T> list }
 
 
 [<RequireQualifiedAccess>]
-module Dijkstra =
+module AStar =
     let init (state0:'a) (heuristic:'a->int) (state2visited:'a->'b) =
         let pq = [[{State=state0; CostSoFar=0; CostAhead=heuristic state0; }]] |> PQ.ofSeq
         let visited0 = Set.empty //[state2visited state0] |> set
@@ -25,7 +25,7 @@ module Dijkstra =
             { state2visited=state2visited; visited=visited0 }
         )
 
-    let iterate (dvst: DijkstraVisited<'T,'U>) (step:'T -> ('T*int) seq) (dalg: DijkstraAlg<'T>) =
+    let iterate (dvst: AStarVisited<'T,'U>) (step:'T -> ('T*int) seq) (dalg: AStarAlg<'T>) =
         let (topEltChainOpt, nextPq) = dalg.pq |> PQ.dequeue
         if topEltChainOpt=None then None else
         let topEltChain : PathPart<'T> list = topEltChainOpt.Value.v

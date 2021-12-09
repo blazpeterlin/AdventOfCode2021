@@ -52,7 +52,7 @@ let main argv =
         Math.Abs(x-x0) + Math.Abs(y-y0)
 
     let shortest = 
-        Dijkstra.unfold getSteps p0 heuristic id (fun g -> g.State=pN)
+        AStar.unfold getSteps p0 heuristic id (fun g -> g.State=pN)
         |> Seq.filter (fun candidate -> candidate.IsGoal)
         |> Seq.head
         

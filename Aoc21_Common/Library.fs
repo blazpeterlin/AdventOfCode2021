@@ -153,3 +153,34 @@ module C =
         |0 -> None
         |fN-> Some ((Seq.fold2(fun n i g -> n+i*(fN/g)*(ModularInverse g ((fN/g)%g))) 0 n g)%fN)
 
+    let rec generateCombinationsNonRepeating (eltList : 'T list) : 'T list list =
+        match eltList with
+        | [x] -> [[x]]
+        | x -> 
+            [0..x.Length-1]
+            |> List.map (fun idx ->
+                let elt = eltList[idx]
+                let innerChList = eltList |> List.except [elt]
+                let r = 
+                    generateCombinationsNonRepeating innerChList
+                    |> List.map (fun arr -> elt::arr)
+                r
+            )
+            |> List.concat
+
+    let generateCombinationsRepeating (eltList : 'T list) : 'T list list =
+        let rec generateCombinationsRepeatingInner (eltsRemaining:int) : 'T list list =
+            match eltsRemaining with
+            | 1 -> eltList |> List.map (fun elt -> [elt])
+            | _ -> 
+                [0..eltList.Length-1]
+                |> List.map (fun idx ->
+                    let elt = eltList[idx]
+                    let r = 
+                        generateCombinationsRepeatingInner (eltsRemaining-1)
+                        |> List.map (fun arr -> elt::arr)
+                    r
+                )
+                |> List.concat
+        generateCombinationsRepeatingInner (eltList.Length)
+

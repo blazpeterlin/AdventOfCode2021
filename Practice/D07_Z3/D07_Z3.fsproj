@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>6.0</LangVersion>
+    <WarnOn>3390;$(WarnOn)</WarnOn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Z3Fs\Api.fs" />
+    <Compile Include="Z3Fs\Bool.fs" />
+    <Compile Include="Z3Fs\Int.fs" />
+    <Compile Include="Z3Fs\Real.fs" />
+    <Compile Include="Z3Fs\Array.fs" />
+    <Compile Include="Z3Fs\BitVec.fs" />
+    <Compile Include="Z3Fs\Function.fs" />
+    <Compile Include="Program.fs" />
+    <Content Include="test.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="input.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FParsec" Version="1.1.1" />
+    <PackageReference Include="Microsoft.Z3.x64" Version="4.8.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Aoc21_Common\Aoc21_Common.fsproj" />
+  </ItemGroup>
+
+</Project>
