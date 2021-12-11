@@ -10,9 +10,47 @@ module C =
     //let inline (+?) (x: int) (y: int) = x + 2*y
 
     //let abc = 1 +? 2
+
+    let NEIGHBOURS_PLUS = [(-1,0);(+1,0);(0,-1);(0,+1)]
+    let NEIGHBOURS_X = [(-1,-1);(-1,+1);(+1,-1);(+1,+1)]
+    let NEIGHBOURS_8DIR = [(-1,0);(+1,0);(0,-1);(0,+1);(-1,-1);(-1,+1);(+1,-1);(+1,+1)]
     
     let toDictionary (map : Map<_, _>) : System.Collections.Generic.Dictionary<_, _> = 
         System.Collections.Generic.Dictionary(map)
+
+    let toPosMap (ln2elts : string -> #seq<'T>) (lns : string list) : Map<(int*int),'T> =
+        lns
+        |> List.indexed
+        |> List.map (
+            fun (y, ln:string) -> 
+                ln |> ln2elts |> Seq.indexed |> Seq.map (fun (x,n) -> ((x,y),n)) |> List.ofSeq
+            )
+        |> List.concat
+        |> Map.ofList
+
+    let walled (pos2val: (int*int) -> 'T) (m : Map<(int*int),'T>) : Map<(int*int),'T>  =
+        let (minx, maxx) = m.Keys |> Seq.map fst |> fun xs -> (Seq.min xs |> (+) -1, Seq.max xs |> (+)1)
+        let (miny, maxy) = m.Keys |> Seq.map snd |> fun ys -> (Seq.min ys |> (+) -1, Seq.max ys |> (+)1)
+
+        let m1 = 
+            [minx..maxx] 
+            |> List.fold (fun m x -> 
+                let pos0 = (x, miny)
+                let posn = (x, maxy)
+                m
+                |> Map.add pos0 (pos2val(pos0))
+                |> Map.add posn (pos2val(posn))
+            ) m
+        let m2 = 
+            [miny..maxy] 
+            |> List.fold (fun m y -> 
+                let pos0 = (minx, y)
+                let posn = (maxx, y)
+                m
+                |> Map.add pos0 (pos2val(pos0))
+                |> Map.add posn (pos2val(posn))
+            ) m1
+        m2
 
     let rec private skipLastEmpty (list:List<string>) =
         match list with
