@@ -11,9 +11,9 @@ module C =
 
     //let abc = 1 +? 2
 
-    let NEIGHBOURS_PLUS = [(-1,0);(+1,0);(0,-1);(0,+1)]
-    let NEIGHBOURS_X = [(-1,-1);(-1,+1);(+1,-1);(+1,+1)]
-    let NEIGHBOURS_8DIR = [(-1,0);(+1,0);(0,-1);(0,+1);(-1,-1);(-1,+1);(+1,-1);(+1,+1)]
+    let MOVES_PLUS = [(-1,0);(+1,0);(0,-1);(0,+1)]
+    let MOVES_X = [(-1,-1);(-1,+1);(+1,-1);(+1,+1)]
+    let MOVES_8DIR = [(-1,0);(+1,0);(0,-1);(0,+1);(-1,-1);(-1,+1);(+1,-1);(+1,+1)]
     
     let toDictionary (map : Map<_, _>) : System.Collections.Generic.Dictionary<_, _> = 
         System.Collections.Generic.Dictionary(map)
@@ -118,9 +118,9 @@ module C =
     let rec gcd x y =
         if y = 0 then x
         else gcd y (x % y)
+
     let lcm a b = a*b/(gcd a b)
 
-    
     let isPrime a =
         match a with
         | a when a < 2 -> false
@@ -128,7 +128,7 @@ module C =
             let divisors = seq { 2 .. int (sqrt (float a)) }
             not <| Seq.exists (fun d -> a % d = 0) divisors
 
-    let print2d (s) (morphVal) =
+    let print2d (s : #seq<#seq<'T>>) (morphVal) =
         for y in s do
             Console.WriteLine()
             for x in y do
@@ -221,4 +221,33 @@ module C =
                 )
                 |> List.concat
         generateCombinationsRepeatingInner (eltList.Length)
+
+    type HexCoordCube = { Q: int; R: int; S: int; }
+
+    let hexCoords_axial2cube (x,y) = { Q=x; R=y; S= -x-y; }
+    let hexCoords_cube2axial (c:HexCoordCube)  = (c.Q, c.R)
+
+    let hexCoords_GetNeighbours (x,y) =
+        (x,y)
+        |> hexCoords_axial2cube
+        |> fun c -> [
+            { c with Q=c.Q+1; R=c.R-1; };
+            { c with Q=c.Q+1; S=c.S-1; };
+            { c with R=c.R+1; Q=c.Q-1; };
+            { c with R=c.R+1; S=c.S-1; };
+            { c with S=c.S+1; Q=c.Q-1; };
+            { c with S=c.S+1; R=c.R-1; };
+            ]
+        |> List.map hexCoords_cube2axial
+
+    let hexCoords_Dist (x1,y1) (x2,y2) =
+        let c1 = hexCoords_axial2cube (x1,y1)
+        let c2 = hexCoords_axial2cube (x2,y2)
+
+        seq { abs(c1.Q-c2.Q) ; abs(c1.R-c2.R) ; abs(c1.S-c2.S) }
+        |> Seq.max
+
+    let hexCoords_IsNeighbour (x1,y1) (x2,y2) =
+        hexCoords_Dist (x1,y1) (x2,y2)
+        |> (=)1
 

@@ -14,6 +14,8 @@ type AStarVisited<'T,'U> when 'U:comparison =
 type AStarResult<'T> =
     { IsGoal: bool; State:'T; TotalCost: int; Heuristic: int; ChainReverse: PathPart<'T> list }
 
+type AStarGoalParams<'T> = { State:'T; TotalCost:int; Heuristic:int }
+
 
 [<RequireQualifiedAccess>]
 module AStar =
@@ -25,7 +27,7 @@ module AStar =
             { state2visited=state2visited; visited=visited0 }
         )
 
-    let iterate (dvst: AStarVisited<'T,'U>) (step:'T -> ('T*int) seq) (dalg: AStarAlg<'T>) =
+    let iterate (keepChain: bool) (dvst: AStarVisited<'T,'U>) (step:'T -> ('T*int) seq) (dalg: AStarAlg<'T>) =
         let (topEltChainOpt, nextPq) = dalg.pq |> PQ.dequeue
         if topEltChainOpt=None then None else
         let topEltChain : PathPart<'T> list = topEltChainOpt.Value.v
@@ -40,21 +42,22 @@ module AStar =
             addedElts 
             |> Seq.fold (fun dai (actualElt,moveCost) -> 
                     let costAhead = actualElt |> dai.heuristic 
+                    let nextTopEltChain = if keepChain then topEltChain else []
                     { dai with
-                        pq=PQ.insert dai.pq ({ State=actualElt; CostSoFar=costSoFar+moveCost; CostAhead=costAhead }::topEltChain)
+                        pq=PQ.insert dai.pq ({ State=actualElt; CostSoFar=costSoFar+moveCost; CostAhead=costAhead }::nextTopEltChain)
                     }
                 )
                 dalg
         
         Some (Some (topEltState, (costSoFar, h), topEltChain), resDijkstra)
 
-    let unfold (step:'T -> ('T*int) seq) state0 heuristic state2visited (isGoal:{| State:'T; TotalCost:int; Heuristic:int |}->bool)  =
-        let (dalg, dvst) = init state0 heuristic state2visited
+    let unfold (keepChain: bool) (step:'T -> ('T*int) seq) heuristic pathUniqueBy (isGoal:AStarGoalParams<'T>->bool) state0 =
+        let (dalg, dvst) = init state0 heuristic pathUniqueBy
         dalg
-        |> Seq.unfold (iterate dvst step)
+        |> Seq.unfold (iterate keepChain dvst step)
         |> Seq.choose id
         |> Seq.map (fun (state, (totalCost,heuristic), chain) -> 
-                let g = isGoal {| State=state; TotalCost=totalCost; Heuristic=heuristic; |}
+                let g = isGoal { State=state; TotalCost=totalCost; Heuristic=heuristic; }
                 //(state,(totalCost,heuristic),g)
                 { State=state; TotalCost=totalCost; Heuristic=heuristic; IsGoal=g; ChainReverse=chain }
             )

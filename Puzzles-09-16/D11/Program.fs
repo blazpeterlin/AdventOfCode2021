@@ -34,13 +34,14 @@ let main argv =
 
     let neighbours (m:Map<(int*int),int>) (x,y) =
         //[(-1,0);(1,0);(0,-1);(0,1);(-1,1);(-1,-1);(1,-1);(1,1)]
-        C.NEIGHBOURS_8DIR
+        C.MOVES_8DIR
         |> List.map (fun d -> (x,y) +.. d)
         |> List.filter (m.ContainsKey)
         |> List.filter (fun (x0,y0) -> m[(x0,y0)] > 0)
 
     let incNeighbours (m1:Map<(int*int),int>) ((x,y):int*int) : Map<(int*int),int> =
         let ns = neighbours m1 (x,y)
+        //m1 |> Map.
         let m2 = 
             ns
             |> List.fold (
@@ -54,7 +55,8 @@ let main argv =
         
 
     let flashAll (m1:Map<(int*int),int>, numFlashes: int) =
-        let nines = m1 |> Map.toList |> List.filter (fun (pos,v) -> v > 9) |> List.map fst
+        //let nines = m1 |> Map.toList |> List.filter (fun (pos,v) -> v > 9) |> List.map fst
+        let nines = m1 |> Map.filter (fun pos v -> v > 9) |> Map.keys |> List.ofSeq
         if nines.Length=0 then None else
 
         let m2 = nines |> List.fold incNeighbours m1

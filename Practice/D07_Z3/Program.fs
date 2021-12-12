@@ -58,7 +58,6 @@ let main argv =
     let va = (mappedRes["a"]) //.ToString() |> float
     let vb = mappedRes["b"].ToString() |> float
     let vc = mappedRes["c"].ToString() |> float
-
     //let dog = Int("dog")
     //let cat = Int("cat")
     //let mouse = Int("mouse")
