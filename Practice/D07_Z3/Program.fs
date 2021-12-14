@@ -54,10 +54,11 @@ let main argv =
         | Solution(sfrs) ->
             let m = sfrs |> List.map (fun (s,f,r) -> (s.ToString(), getVal r)) |> Map.ofList
             m
+    
+    let va = mappedRes["a"].ToString() |> Real // :?> RatNum //.ToString() |> Real // :?> RealExpr :?>  //.ToString() |> float
+    let vb = mappedRes["b"].ToString() |> Real
+    let vc = mappedRes["c"].ToString() |> Real
 
-    let va = (mappedRes["a"]) //.ToString() |> float
-    let vb = mappedRes["b"].ToString() |> float
-    let vc = mappedRes["c"].ToString() |> float
     //let dog = Int("dog")
     //let cat = Int("cat")
     //let mouse = Int("mouse")
