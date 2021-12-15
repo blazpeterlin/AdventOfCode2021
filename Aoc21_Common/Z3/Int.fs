@@ -44,7 +44,7 @@ type Int with
   static member (+)(x, IntExpr y) = add (createInt x) y
   static member (-)(IntExpr x, IntExpr y) = subtract x y
   static member (-)(IntExpr x, y) = subtract x (createInt y)
-  static member (-)(x, IntExpr y) = subtract (createInt x) y
+  static member (----)(x, IntExpr y) = subtract (createInt x) y
   static member (*)(IntExpr x, IntExpr y) = multiply x y
   static member (*)(IntExpr x, y) = multiply x (createInt y)
   static member (*)(x, IntExpr y) = multiply (createInt x) y

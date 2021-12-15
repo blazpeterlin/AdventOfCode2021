@@ -14,6 +14,12 @@ module C =
     let MOVES_PLUS = [(-1,0);(+1,0);(0,-1);(0,+1)]
     let MOVES_X = [(-1,-1);(-1,+1);(+1,-1);(+1,+1)]
     let MOVES_8DIR = [(-1,0);(+1,0);(0,-1);(0,+1);(-1,-1);(-1,+1);(+1,-1);(+1,+1)]
+
+    let append (s: #seq<'T>) (toAppend: #seq<'T>) =
+        Seq.append toAppend s
+
+    let prepend (s: #seq<'T>) (toAppend: #seq<'T>) =
+        Seq.append s toAppend
     
     let toDictionary (map : Map<_, _>) : System.Collections.Generic.Dictionary<_, _> = 
         System.Collections.Generic.Dictionary(map)

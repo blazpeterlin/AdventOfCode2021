@@ -7,10 +7,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Z3\Api.fs" />
+    <Compile Include="Z3\Bool.fs" />
+    <Compile Include="Z3\Int.fs" />
+    <Compile Include="Z3\Real.fs" />
+    <Compile Include="Z3\Array.fs" />
+    <Compile Include="Z3\BitVec.fs" />
+    <Compile Include="Z3\Function.fs" />
     <Compile Include="BinomialHeapPQ.fs" />
     <Compile Include="PriorityQueue.fs" />
     <Compile Include="AStar.fs" />
     <Compile Include="Library.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Z3.x64" Version="4.8.10" />
   </ItemGroup>
 
 </Project>

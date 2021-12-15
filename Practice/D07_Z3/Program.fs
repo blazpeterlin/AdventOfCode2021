@@ -59,6 +59,9 @@ let main argv =
     let vb = mappedRes["b"].ToString() |> Real
     let vc = mappedRes["c"].ToString() |> Real
 
+    let o = Gs.context().MkOptimize()
+    //Z3.S
+
     //let dog = Int("dog")
     //let cat = Int("cat")
     //let mouse = Int("mouse")
