@@ -1,11 +1,13 @@
 ﻿open System
 open Aoc21_Common
-open FParsec
+//open FParsec
 open System.Diagnostics
 open System.Collections.Generic
 open Microsoft.FSharp.Core.Operators.Checked
 open System.Security.Cryptography
 open System.Text
+open AngouriMath.FSharp.Core
+open AngouriMath.FSharp.Functions
 open Microsoft.Z3
 open Microsoft.Z3.Bool
 open Microsoft.Z3.Int
@@ -30,10 +32,14 @@ let main argv =
 
     // figure out the exact polynomial equation for part 2
     
-    let getVal (r:Result) =
+    let getValInt (r:Result) =
         match r with 
         | Func(_) -> failwith "Unexpected func"
-        | Const(x) -> x
+        | Const(x) -> x.ToString() |> simplified |> asNumber |> int
+    let getValDouble (r:Result) =
+        match r with 
+        | Func(_) -> failwith "Unexpected func"
+        | Const(x) -> x.ToString() |> simplified |> asNumber |> double
 
     let a = Real("a")
     let b = Real("b")
@@ -49,17 +55,28 @@ let main argv =
 
     let mappedRes =
         match z3res with
-        | NoSolution -> failwith "nosolution"
-        | Unknown -> failwith "unknown"
+        | NoSolution | Unknown -> failwith ("fail " + z3res.ToString())
         | Solution(sfrs) ->
-            let m = sfrs |> List.map (fun (s,f,r) -> (s.ToString(), getVal r)) |> Map.ofList
+            let m = sfrs |> List.map (fun (s,f,r) -> (s.ToString(), getValDouble r)) |> Map.ofList
             m
     
-    let va = mappedRes["a"].ToString() |> Real // :?> RatNum //.ToString() |> Real // :?> RealExpr :?>  //.ToString() |> float
-    let vb = mappedRes["b"].ToString() |> Real
-    let vc = mappedRes["c"].ToString() |> Real
+    let val_a = mappedRes["a"]
+    let val_b = mappedRes["b"]
+    let val_c = mappedRes["c"]
 
-    let o = Gs.context().MkOptimize()
+    let angouriRes = 
+        [
+            "c"
+            "a + b + c - 1"
+            "4a + 2b + c - 3"
+        ]
+        |> List.map parsed
+        |> AngouriMath.Core.EquationSystem
+        |> fun x -> x.Solve("a", "b", "c")
+    
+    printfn "%O" (simplified (solutions "x" "x^2 + 2 a x + a^2 = 0"))
+
+    //let o = Gs.context().MkOptimize()
     //Z3.S
 
     //let dog = Int("dog")
