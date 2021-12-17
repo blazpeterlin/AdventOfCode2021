@@ -73,6 +73,7 @@ let main argv =
     
     let maxX2 = map2.Keys |> List.ofSeq |> List.map fst |> List.max
     let maxY2 = map2.Keys |> List.ofSeq |> List.map snd |> List.max
+    let posN2 = (maxX2,maxY2)
     
 
     // ugly duplicated code ahead, since this was all entered for global leaderboard speed.
@@ -83,14 +84,26 @@ let main argv =
 
     let getSteps2 pos =
             C.MOVES_PLUS
-            |> List.map (fun move -> move +.. pos)
-            |> List.filter (fun newPos -> map2.ContainsKey newPos)
-            |> List.map (fun newPos -> (newPos, map2[newPos]))
-            |> Seq.ofList
+            |> Seq.map (fun move -> move +.. pos)
+            //|> List.filter (fun newPos -> map2.ContainsKey newPos)
+            //|> List.map (fun newPos -> (newPos, map2[newPos]))
+            |> Seq.choose (fun newPos ->
+                match map2.TryFind newPos with
+                | Some oldVal -> Some (newPos, oldVal)
+                | None -> None
+                )
+            |> Seq.cache
+            //|> Seq.ofList
 
-    let res2Path = 
+    let r2 = 
         pos0 
         |> AStar.unfold true getSteps2 heuristic2 id (fun x -> x.Heuristic = 0)
+        |> Seq.cache
+
+    //let r2c = r2 |>Seq.length
+
+    let res2Path = 
+        r2
         |> Seq.filter (fun x -> x.IsGoal)
         |> Seq.head
 
@@ -101,7 +114,6 @@ let main argv =
         |> Seq.map (fun cr -> map2[cr.State])
         |> Seq.sum
 
-        
 
     0
 
