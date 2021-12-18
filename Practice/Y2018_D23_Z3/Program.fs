@@ -11,6 +11,7 @@ open Microsoft.Z3.Bool
 open Microsoft.Z3.Int
 open Microsoft.Z3.Real
 open Microsoft.Z3.Function
+open Microsoft.Z3.Api
 open System.Numerics
 
 type ENV = T | P
@@ -21,7 +22,7 @@ let internal (+...) (x0,y0,z0) (x1,y1,z1) = (x0+x1,y0+y1,z0+z1)
 
 [<EntryPoint>]
 let main argv =    
-    let env =P
+    let env =T
     let inputFile = env |> function | T -> "test.txt" | P -> "input.txt"
     
     let lns = 
@@ -29,26 +30,48 @@ let main argv =
         |> List.map (fun ln -> ln |> C.splitCh "=<,> rpos" |> List.map (fun str -> str|> BigInteger.Parse) |> fun xs -> (xs[0], xs[1], xs[2]),xs[3])
 
     0
-    
-    let dist (x0, y0, z0) (x1, y1, z1) =
-      abs (x0 - x1) + abs (y0-y1) + abs (z0-z1)
 
-    let getVal (r:Result) =
-        match r with 
-        | Func(_) -> failwith "Unexpected func"
-        | Const(x) -> x
-
-    //  let f (x: Int) = Z3.CreateFunction<Int>("f", IntSort(), x)
-    
-    //let zabs (x: Int) = 0  ---- x
-    // Z3.CreateFunction<Int>("zabs", IntSort(), If(x <. 0, 0-x, x) )
-    
+    let dict = Dictionary<string,string>()
+    //dict["model"] <- "true"
+    //let s = Gs.overrideContext(dict)
+    let huh = s = Gs.context()
     let opt = Gs.context().MkOptimize()
+
+    let varX = Int "x"
+    let varY = Int "y"
+    let varZ = Int "z"
+
+    let ZERO = IntVal 0I
+    let ONE = IntVal 1I
+
+    let intSort = Gs.context().MkIntSort() :> Sort
+    let boolSort = Gs.context().MkBoolSort() :> Sort
+    let realSort = Gs.context().MkRealSort() :> Sort
+
+    let zAbs (a: Int) = Z3.CreateFunction<Int>("zabs", intSort, IIF_Int (a >=. ZERO , a , (0I-a)))
+    let zDist (a: Int, b: Int) = Z3.CreateFunction<Int>("zdist", intSort, zAbs(a - b))
     
-    ////let dist_from_zero = Func
+    let zDrones = [| 
+            for (dx,dy,dz),dr in lns do
+                let x,y,z,r = IntVal dx, IntVal dy, IntVal dz, IntVal dr
+                let condition = (zDist(x,varX) + zDist(y,varY) + zDist(z,varZ) <=. r)
+                let zIsInRange = IIF_Int(condition, ONE, ZERO) 
+                yield zIsInRange
+        |]
 
+    let zDronesInRangeSum = Gs.context().MkAdd(zDrones |> Array.map (asIntExpr >> (fun x -> x :> ArithExpr)))
 
-    //let finalOpt = (opt.MkMaximize rangeCount).MkMinimize dist_from_zero
+    //let varDistFromZero = Int "distFromZero"
+    //let ruleDistFromZero = varDistFromZero =. (varX + varY + varZ) |> asBoolExpr
+    //opt.Add(ruleDistFromZero)
+
+    opt.MkMaximize(zDronesInRangeSum)
+    opt.MkMinimize(varX + varY + varZ |> asIntExpr)
+    
+    let status = opt.Check()
+    let resModel = opt.Model
+
+    let resDistFromZero = resModel.Eval(varX + varY + varZ |> asIntExpr)
 
     0
 

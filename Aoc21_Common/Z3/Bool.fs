@@ -13,6 +13,7 @@ type Bool(e: BoolExpr) =
 
 let BoolExpr expr = Bool(expr)
 let (|BoolExpr|) (b: Bool) = b.Expr :?> BoolExpr
+let asBoolExpr b = b |> function | BoolExpr be -> be
 
 module Solver =
 
@@ -52,6 +53,8 @@ type Bool with
   static member (=.)(p, BoolExpr q) = createEquiv (createBool p) q
   static member Distinct xs = Array.map (fun (BoolExpr expr) -> expr :> Expr) xs |> createDistinct
   static member If(BoolExpr b, BoolExpr expr1, BoolExpr expr2) = createITE b expr1 expr2
+
+let IIF_Bool(BoolExpr b, BoolExpr expr1, BoolExpr expr2) = createITE b expr1 expr2
 
 /// Return a bool const with supplied name
 let Bool(s: string) = 

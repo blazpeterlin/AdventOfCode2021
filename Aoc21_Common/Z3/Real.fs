@@ -12,6 +12,7 @@ type Real(expr: RealExpr) =
 
 let RealExpr expr = Real(expr)
 let (|RealExpr|) (r: Real) = r.Expr :?> RealExpr
+let asRealExpr r = r |> function | RealExpr re -> re
 
 [<AutoOpen>]
 module internal RealUtils =
@@ -91,6 +92,8 @@ type Real with
   static member (<=.)(x, RealExpr y) = le (fromDecimal x) y
   static member Distinct xs = Array.map (fun (RealExpr expr) -> expr :> Expr) xs |> distinct
   static member If(BoolExpr b, RealExpr expr1, RealExpr expr2) = createITE b expr1 expr2
+
+let IIF_Real(BoolExpr b, RealExpr expr1, RealExpr expr2) = createITE b expr1 expr2
 
 /// Return a real const with supplied name
 let Real(s: string) =

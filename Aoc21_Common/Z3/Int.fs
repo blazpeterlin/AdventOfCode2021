@@ -14,6 +14,7 @@ type Int(expr: IntExpr) =
 
 let IntExpr expr = Int(expr)
 let (|IntExpr|) (i: Int) = i.Expr :?> IntExpr
+let asIntExpr i = i |> function | IntExpr ie -> ie
 
 [<AutoOpen>]
 module internal IntUtils =
@@ -44,7 +45,7 @@ type Int with
   static member (+)(x, IntExpr y) = add (createInt x) y
   static member (-)(IntExpr x, IntExpr y) = subtract x y
   static member (-)(IntExpr x, y) = subtract x (createInt y)
-  static member (----)(x, IntExpr y) = subtract (createInt x) y
+  static member (-)(x, IntExpr y) = subtract (createInt x) y
   static member (*)(IntExpr x, IntExpr y) = multiply x y
   static member (*)(IntExpr x, y) = multiply x (createInt y)
   static member (*)(x, IntExpr y) = multiply (createInt x) y
@@ -72,6 +73,8 @@ type Int with
   static member (<=.)(x, IntExpr y) = le (createInt x) y
   static member Distinct xs = Array.map (fun (IntExpr expr) -> expr :> Expr) xs |> createDistinct
   static member If(BoolExpr b, IntExpr expr1, IntExpr expr2) = createITE b expr1 expr2
+
+let IIF_Int(BoolExpr b, IntExpr expr1, IntExpr expr2) = createITE b expr1 expr2
 
 /// Return an int const with supplied name
 let Int(s: string) = 

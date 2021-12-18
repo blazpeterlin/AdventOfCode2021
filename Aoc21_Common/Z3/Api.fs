@@ -9,6 +9,9 @@ module Context =
   /// Make a new context
   let create () =
     new Context(Dictionary ())
+  
+  let createFromDict (dict) =
+    new Context(dict)
 
   /// Get a list of tactics for the context
   let tactics (ctx : Context) =
@@ -17,6 +20,9 @@ module Context =
 /// Globals / global state
 module Gs =
   let mutable private globalCtx = Context.create ()
+  let overrideContext(dict) = 
+    globalCtx <- Context.createFromDict(dict)
+    globalCtx
   let context () = globalCtx
 
 
