@@ -10,6 +10,7 @@ open Microsoft.Z3
 open Microsoft.Z3.Bool
 open Microsoft.Z3.Int
 open Microsoft.Z3.Real
+open Microsoft.Z3.Array
 open Microsoft.Z3.Function
 open Microsoft.Z3.Api
 open System.Numerics
@@ -18,91 +19,49 @@ type ENV = T | P
 let internal (+..) (x0,y0) (x1,y1) = (x0+x1,y0+y1)
 let internal (+...) (x0,y0,z0) (x1,y1,z1) = (x0+x1,y0+y1,z0+z1)
 
-// type State = { EL:int; }
+
+let internal (??>) (b:Bool) (expr1:Theory,expr2:Theory) = 
+    match expr1,expr2 with
+    | (:? Bool as b1),(:? Bool as b2) -> createITE (b |> asBoolExpr) (b1 |> asBoolExpr) (b2 |> asBoolExpr)
+    | (:? Int as i1),(:? Int as i2) -> createITE (b |> asBoolExpr) (i1 |> asIntExpr) (i2 |> asIntExpr)
+    | (:? Real as r1),(:? Real as r2) -> createITE (b |> asBoolExpr) (r1 |> asRealExpr) (r2 |> asRealExpr)
+    | _ ->failwith "Failed to match types in ?>"
+let internal (-->) (expr1) (expr2) = (expr1,expr2)
+
 
 [<EntryPoint>]
 let main argv =    
-    let env =T
+    let env = T
     let inputFile = env |> function | T -> "test.txt" | P -> "input.txt"
     
     let lns = 
         C.readLines inputFile
-        |> List.map (fun ln -> ln |> C.splitCh "=<,> rpos" |> List.map (fun str -> str|> BigInteger.Parse) |> fun xs -> (xs[0], xs[1], xs[2]),xs[3])
+        |> List.map (fun ln -> ln |> C.splitCh "=<,> rpos" |> List.map (fun str -> str|> BigInteger.Parse |> IntVal) |> fun xs -> (xs[0], xs[1], xs[2]),xs[3])
 
     0
 
-    let dict = Dictionary<string,string>()
-    dict["model"] <- "true"
-    //let opt = Gs.context().MkOptimize()
-    let opt = Gs.overrideContext(dict).MkOptimize()
-    //Solver.create
+    let opt = Gs.context().MkOptimize()
     
-    let ZERO = IntVal 0I
-    let ONE = IntVal 1I
-
     let varX = Int "x"
     let varY = Int "y"
     let varZ = Int "z"
 
-    let ctx = Gs.context()
-    
-    let intSort = ctx.MkIntSort() :> Sort
-    let boolSort = ctx.MkBoolSort() :> Sort
-    let realSort = ctx.MkRealSort() :> Sort
-
-
-    //opt.Add(varX >=. 0I |> asBoolExpr)
-    //opt.Add(varX <=. 16I |> asBoolExpr)
-    //opt.MkMaximize(varX |> asIntExpr)
-    //let status = opt.Check()
-    //let resModel = opt.Model
-
-    let zAbs (a: Int) = Z3.CreateFunction<Int>("zabs", intSort, IIF_Int (a >=. ZERO , a , (0I-a)))
-    let zDist (a: Int, b: Int) = Z3.CreateFunction<Int>("zdist", intSort, zAbs(a - b))
-    let zDist2 (a: Int) (b: Int) = Z3.CreateFunction<Int>("zdist2", intSort, zAbs(a - b))
-
-    //let rule1a = IIF_Int((zDist(IntVal 10I,varX) + zDist(IntVal 12I,varY) + zDist(IntVal 12I,varZ)) <=. IntVal 2I, IntVal 1I, IntVal 0I)
-    //let rule1b = IIF_Int((zDist2 (IntVal 10I) varX + zDist2 (IntVal 12I) varY + zDist2 (IntVal 12I) varZ) <=. IntVal 2I, IntVal 1I, IntVal 0I)
-    let rule1c = ctx.MkITE (ctx.MkGe((varX |> asIntExpr) , (ctx.MkIntConst "10")) , (ctx.MkIntConst "0"), (ctx.MkIntConst "1"))
-    //let rule2 = IIF_Int(zDist(IntVal 12I,varX) + zDist(IntVal 14I,varY) + zDist(IntVal 12I,varZ) <=. IntVal 2I, IntVal 1I, IntVal 0I)
-
-    let combined = rule1c// + rule2
-    //opt.Add(combined)
-    opt.Add(varX <=. 5I |> asBoolExpr)
-    opt.Add(varX >=. 15I |> asBoolExpr)
-    //opt.MkMaximize(combined |> asIntExpr)
-    opt.MkMaximize(rule1c)
-    //opt.MkMaximize(varX |> asIntExpr)
-    let status = opt.Check()
-    let resModel = opt.Model
-
-    // -8885, -2437, 0, 2
-    let x,y,z,c = resModel.Eval(varX |> asIntExpr),resModel.Eval(varY |> asIntExpr),resModel.Eval(varZ |> asIntExpr),resModel.Eval(combined)
-    let wut = resModel.Eval((zDist2 (IntVal 10I) varX + zDist2 (IntVal 12I) varY + zDist2 (IntVal 12I) varZ) |> asIntExpr)
+    let zAbs (a: Int) = a >=. 0I ??> a --> (0I-a)
+    let zDist (a: Int, b: Int) = zAbs(a - b)
     
     let zDrones = [| 
-            for (dx,dy,dz),dr in lns do
-                let x,y,z,r = IntVal dx, IntVal dy, IntVal dz, IntVal dr
-                let condition = (zDist(x,varX) + zDist(y,varY) + zDist(z,varZ) <=. r)
-                let zIsInRange = IIF_Int(condition, ONE, ZERO) 
+            for (x,y,z),r in lns do
+                let zIsInRange = zDist(x,varX) + zDist(y,varY) + zDist(z,varZ) <=. r   ??>   IntVal 1I   -->   IntVal 0I
+
                 yield zIsInRange
         |]
 
-    let zDronesInRangeSum = Gs.context().MkAdd(zDrones |> Array.map (asIntExpr >> (fun x -> x :> ArithExpr))) :?> IntExpr |> IntExpr
+    let zDronesInRangeSum = ArrayVal1D_Int zDrones |> Array1D.Z3SUM
 
-
-    //opt.MkMaximize(zDronesInRangeSum)
-    let varDronesInRangeSum = Int "dronesInRangeSum"
-    let ruleDronesInRangeSum : BoolExpr = varDronesInRangeSum =. zDronesInRangeSum |> asBoolExpr
-    opt.Add(ruleDronesInRangeSum)
-    opt.MkMaximize(varDronesInRangeSum |> asIntExpr)
+    opt.MkMaximize(zDronesInRangeSum)
+    opt.MkMinimize(varX + varY + varZ |> asIntExpr)
     
-    //opt.MkMinimize(varX + varY + varZ |> asIntExpr)
-    let varDistFromZero = Int "distFromZero"
-    opt.Add(varDistFromZero =. (varX + varY + varZ) |> asBoolExpr)
-    opt.MkMinimize(varDistFromZero |> asIntExpr)
-    
-    let status = opt.Check()
+    opt.Check() |> function | Status.UNSATISFIABLE -> failwith "unsatisfiable" | Status.UNKNOWN -> failwith "unknown" | Status.SATISFIABLE -> () |> ignore | huh -> failwith "huh"
     let resModel = opt.Model
 
     let resDistFromZero = resModel.Eval(varX + varY + varZ |> asIntExpr)
@@ -113,3 +72,38 @@ let main argv =
     0 // return an integer exit code
 
 
+
+
+    
+    //let ZERO = IntVal 0I
+    //let ONE = IntVal 1I
+
+
+
+    //dict["model"] <- "true"
+    //let opt = Gs.context().MkOptimize()
+    
+    //let intSort = ctx.MkIntSort() :> Sort
+    //let boolSort = ctx.MkBoolSort() :> Sort
+    //let realSort = ctx.MkRealSort() :> Sort
+
+    //// works
+    //let rule1d = varX >=. IntVal 10I ??> IntVal 1I --> IntVal 0I
+
+    //// works
+    //let rule1e = zDist(IntVal 10I, varX) + zDist(IntVal 12I,varY) + zDist(IntVal 12I, varZ) <=. IntVal 2I ??> IntVal 1I --> IntVal 0I
+
+    //opt.MkMaximize(rule1e |> asIntExpr)
+    //opt.MkMaximize(varX |> asIntExpr)
+    //let status = opt.Check()
+    //let resModel = opt.Model
+
+    //// -8885, -2437, 0, 2
+    //let x,y,z,c = resModel.Eval(varX |> asIntExpr),resModel.Eval(varY |> asIntExpr),resModel.Eval(varZ |> asIntExpr),resModel.Eval(rule1e |> asIntExpr)
+    //let sumCheck = resModel.Eval ( zDist(IntVal 10I, varX) + zDist(IntVal 12I,varY) + zDist(IntVal 12I, varZ) |> asIntExpr)
+    //let xcheck,ycheck,zcheck = resModel.Eval(zDist(IntVal 10I, varX) |> asIntExpr), resModel.Eval(zDist(IntVal 12I,varY) |> asIntExpr) , resModel.Eval(zDist(IntVal 12I, varZ) |> asIntExpr)
+
+    
+    // works
+    //let zDronesInRangeSum = Gs.context().MkAdd(zDrones |> Array.map (asIntExpr >> (fun x -> x :> ArithExpr))) :?> IntExpr |> IntExpr
+    // works

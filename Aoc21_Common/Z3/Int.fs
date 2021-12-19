@@ -73,7 +73,13 @@ type Int with
   static member (<=.)(x, IntExpr y) = le (createInt x) y
   static member Distinct xs = Array.map (fun (IntExpr expr) -> expr :> Expr) xs |> createDistinct
   static member If(BoolExpr b, IntExpr expr1, IntExpr expr2) = createITE b expr1 expr2
+  //static member (+>) (BoolExpr b) (IntExpr expr1) (IntExpr expr2) = createITE b expr1 expr2
+  //static member (??>) (b:BoolExpr, (expr1::[expr2] : IntExpr list)) = createITE b expr1 expr2
+  //static member (???>) (b: BoolExpr) (expr1:IntExpr, expr2:IntExpr) = createITE b expr1 expr2
+  //static member (???>) (b: Bool) (expr1:Int, expr2:Int) = createITE (b |> asBoolExpr) (expr1 |> asIntExpr) (expr2 |> asIntExpr)
+  //static member (++>) (IntExpr expr1, IntExpr expr2) = eq expr1 expr2
 
+//let internal (+>) (BoolExpr b) (IntExpr expr1) (IntExpr expr2) = createITE b expr1 expr2
 let IIF_Int(BoolExpr b, IntExpr expr1, IntExpr expr2) = createITE b expr1 expr2
 
 /// Return an int const with supplied name

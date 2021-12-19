@@ -97,30 +97,6 @@ module C =
         )
         |> List.ofArray
 
-
-    //// from https://github.com/andreasjhkarlsson/aoc-2017/blob/master/Common.fs
-    let parseList fn (str: string) =
-        str.Split([|'\t'; ' '; '\r'; '\n'|])
-        |> Array.choose (fun e ->
-            match e.Trim() with
-            | "" -> None
-            | e -> Some (fn e))
-    
-    //// from https://github.com/andreasjhkarlsson/aoc-2017/blob/master/Common.fs
-    let parseLines (str: string) =
-        str.Split([|'\r'; '\n'|])
-       |> Array.choose (fun row ->
-            match row.Trim() with
-            | "" -> None
-            | row -> Some row)
-    
-    //// from https://github.com/andreasjhkarlsson/aoc-2017/blob/master/Common.fs
-    let parseMatrix fn str =
-       str
-       |> parseLines
-       |> Array.map (parseList fn)
-       |> Array.filter (not << Array.isEmpty)
-
     let rec gcd x y =
         if y = 0 then x
         else gcd y (x % y)

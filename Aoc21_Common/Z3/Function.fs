@@ -11,3 +11,5 @@ type Microsoft.Z3.Bool.Z3 with
     let sorts = exprs |> Array.map (fun expr -> expr.Sort)
     let expr = Gs.context().MkFuncDecl(name, sorts, range).Apply(exprs)
     (^T : (static member FromExpr : Expr -> ^T) (expr))
+
+
