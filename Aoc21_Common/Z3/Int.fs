@@ -17,7 +17,7 @@ let (|IntExpr|) (i: Int) = i.Expr :?> IntExpr
 let asIntExpr i = i |> function | IntExpr ie -> ie
 
 [<AutoOpen>]
-module internal IntUtils =
+module IntUtils =
   let inline createInt (x: bigint) = Gs.context().MkInt(string x)
   let inline add x y = Gs.context().MkAdd(x, y) :?> IntExpr |> IntExpr
   let inline subtract x y = Gs.context().MkSub(x, y) :?> IntExpr |> IntExpr

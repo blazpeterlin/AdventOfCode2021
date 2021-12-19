@@ -32,24 +32,53 @@ let main argv =
     0
 
     let dict = Dictionary<string,string>()
-    //dict["model"] <- "true"
-    //let s = Gs.overrideContext(dict)
-    let huh = s = Gs.context()
-    let opt = Gs.context().MkOptimize()
+    dict["model"] <- "true"
+    //let opt = Gs.context().MkOptimize()
+    let opt = Gs.overrideContext(dict).MkOptimize()
+    //Solver.create
+    
+    let ZERO = IntVal 0I
+    let ONE = IntVal 1I
 
     let varX = Int "x"
     let varY = Int "y"
     let varZ = Int "z"
 
-    let ZERO = IntVal 0I
-    let ONE = IntVal 1I
+    let ctx = Gs.context()
+    
+    let intSort = ctx.MkIntSort() :> Sort
+    let boolSort = ctx.MkBoolSort() :> Sort
+    let realSort = ctx.MkRealSort() :> Sort
 
-    let intSort = Gs.context().MkIntSort() :> Sort
-    let boolSort = Gs.context().MkBoolSort() :> Sort
-    let realSort = Gs.context().MkRealSort() :> Sort
+
+    //opt.Add(varX >=. 0I |> asBoolExpr)
+    //opt.Add(varX <=. 16I |> asBoolExpr)
+    //opt.MkMaximize(varX |> asIntExpr)
+    //let status = opt.Check()
+    //let resModel = opt.Model
 
     let zAbs (a: Int) = Z3.CreateFunction<Int>("zabs", intSort, IIF_Int (a >=. ZERO , a , (0I-a)))
     let zDist (a: Int, b: Int) = Z3.CreateFunction<Int>("zdist", intSort, zAbs(a - b))
+    let zDist2 (a: Int) (b: Int) = Z3.CreateFunction<Int>("zdist2", intSort, zAbs(a - b))
+
+    //let rule1a = IIF_Int((zDist(IntVal 10I,varX) + zDist(IntVal 12I,varY) + zDist(IntVal 12I,varZ)) <=. IntVal 2I, IntVal 1I, IntVal 0I)
+    //let rule1b = IIF_Int((zDist2 (IntVal 10I) varX + zDist2 (IntVal 12I) varY + zDist2 (IntVal 12I) varZ) <=. IntVal 2I, IntVal 1I, IntVal 0I)
+    let rule1c = ctx.MkITE (ctx.MkGe((varX |> asIntExpr) , (ctx.MkIntConst "10")) , (ctx.MkIntConst "0"), (ctx.MkIntConst "1"))
+    //let rule2 = IIF_Int(zDist(IntVal 12I,varX) + zDist(IntVal 14I,varY) + zDist(IntVal 12I,varZ) <=. IntVal 2I, IntVal 1I, IntVal 0I)
+
+    let combined = rule1c// + rule2
+    //opt.Add(combined)
+    opt.Add(varX <=. 5I |> asBoolExpr)
+    opt.Add(varX >=. 15I |> asBoolExpr)
+    //opt.MkMaximize(combined |> asIntExpr)
+    opt.MkMaximize(rule1c)
+    //opt.MkMaximize(varX |> asIntExpr)
+    let status = opt.Check()
+    let resModel = opt.Model
+
+    // -8885, -2437, 0, 2
+    let x,y,z,c = resModel.Eval(varX |> asIntExpr),resModel.Eval(varY |> asIntExpr),resModel.Eval(varZ |> asIntExpr),resModel.Eval(combined)
+    let wut = resModel.Eval((zDist2 (IntVal 10I) varX + zDist2 (IntVal 12I) varY + zDist2 (IntVal 12I) varZ) |> asIntExpr)
     
     let zDrones = [| 
             for (dx,dy,dz),dr in lns do
@@ -59,14 +88,19 @@ let main argv =
                 yield zIsInRange
         |]
 
-    let zDronesInRangeSum = Gs.context().MkAdd(zDrones |> Array.map (asIntExpr >> (fun x -> x :> ArithExpr)))
+    let zDronesInRangeSum = Gs.context().MkAdd(zDrones |> Array.map (asIntExpr >> (fun x -> x :> ArithExpr))) :?> IntExpr |> IntExpr
 
-    //let varDistFromZero = Int "distFromZero"
-    //let ruleDistFromZero = varDistFromZero =. (varX + varY + varZ) |> asBoolExpr
-    //opt.Add(ruleDistFromZero)
 
-    opt.MkMaximize(zDronesInRangeSum)
-    opt.MkMinimize(varX + varY + varZ |> asIntExpr)
+    //opt.MkMaximize(zDronesInRangeSum)
+    let varDronesInRangeSum = Int "dronesInRangeSum"
+    let ruleDronesInRangeSum : BoolExpr = varDronesInRangeSum =. zDronesInRangeSum |> asBoolExpr
+    opt.Add(ruleDronesInRangeSum)
+    opt.MkMaximize(varDronesInRangeSum |> asIntExpr)
+    
+    //opt.MkMinimize(varX + varY + varZ |> asIntExpr)
+    let varDistFromZero = Int "distFromZero"
+    opt.Add(varDistFromZero =. (varX + varY + varZ) |> asBoolExpr)
+    opt.MkMinimize(varDistFromZero |> asIntExpr)
     
     let status = opt.Check()
     let resModel = opt.Model
