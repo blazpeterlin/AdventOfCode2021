@@ -23,8 +23,16 @@ type Array1D(expr : Theory array) =
         |> Array.map BoolExpr
         |> Array.map (fun x -> x :> Theory)
         |> Array1D
+    static member Z3DISTINCT (a1: Array1D) =
+        Gs.context().MkDistinct(a1.Expr |> Array.map (fun x -> x.Expr))
     static member Z3SUM (a1: Array1D) =
         Gs.context().MkAdd(a1.Expr |> Array.map (fun x -> x.Expr :?> ArithExpr))
+    static member Z3OR (a1: Array1D) =
+        Gs.context().MkOr(a1.Expr |> Array.map (fun x -> x.Expr :?> BoolExpr))
+    static member Z3AND (a1: Array1D) =
+        Gs.context().MkAnd(a1.Expr |> Array.map (fun x -> x.Expr :?> BoolExpr))
+    static member Z3XOR (a1: Array1D) =
+        Gs.context().MkXor(a1.Expr |> Array.map (fun x -> x.Expr :?> BoolExpr))
 
 
 
