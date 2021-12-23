@@ -37,24 +37,11 @@ let main argv =
         |> List.indexed
         |> List.map (fun (y,blocks) -> blocks |> List.indexed |> List.map (fun (x,b) -> ((x,y),b)))
         |> List.concat
-        |> List.filter(fun (pos,v) -> v <> WALL) // implicit
+        |> List.filter(fun (pos,v) -> v <> WALL && v <> SPACE) // both became implicit
         |> Map.ofList
-        |> Map.add (-1,-1) SPACE
 
-    let calcTarget st0 =
-        st0
-        |> Map.toList
-        |> List.map (fun ((x,y),v) -> 
-            let newV = 
-                match v,x with
-                | SPACE,_ -> SPACE
-                | AMPH(amph),3 -> AMPH(A)
-                | AMPH(amph),5 -> AMPH(B)
-                | AMPH(amph),7 -> AMPH(C)
-                | AMPH(amph),9 -> AMPH(D)
-                | _ -> failwith "huh"
-            (x,y),newV
-            )
+    let calcTarget (dimx:int,dimy:int) =
+        [ for x in [3;5;7;9] do for y in 2..dimy do yield (x,y),match x with | 3 -> AMPH(A) | 5 -> AMPH(B) | 7 -> AMPH(C) | 9 -> AMPH(D)]
         |> Map.ofList
     
     let getTargetX = function | AMPH(A) -> 3 | AMPH(B) -> 5 | AMPH(C) -> 7 | AMPH(D) -> 9
@@ -73,38 +60,29 @@ let main argv =
         let maxx = max x0 x1
         let condition1 = 
             seq { for x in minx..maxx do yield (x,y1) }
-            |> Seq.forall (fun pos -> st[pos]=SPACE)
+            |> Seq.forall (fun pos -> st.ContainsKey(pos) |> not)
         let condition2 = 
             seq { for y in 2..y0-1 do yield (x0,y)}
-            |> Seq.forall (fun pos -> st[pos]=SPACE)
+            |> Seq.forall (fun pos -> st.ContainsKey(pos) |> not)
         if condition1 && condition2
         then Some(abs(x0-x1) + abs(y0-y1))
         else None
-
+        
+    let badPos = [3,1;5,1;7,1;9,1]
     
-    let doActionsGeneric dimx dimy (stN:Map<int*int,BLOCK>) (st:Map<int*int,BLOCK>) =
-        let usefulSt = 
-            st 
-            |> Map.toSeq 
-            |> Seq.filter (fun ((x,y),amph) -> amph <> SPACE) 
-            |> List.ofSeq
-        let tempPos = [3,1;5,1;7,1;9,1]
+    let doActionsGeneric (dimx,dimy) (stN:Map<int*int,BLOCK>) (st:Map<int*int,BLOCK>) =
+        let usefulSt = st |> Map.toList
        
         let remainingAmphs = 
             usefulSt 
             |> Seq.filter (fun((x,y),amph) -> 
-                    stN[(x,y)]<>amph
+                    (stN |> Map.tryFind (x,y) |> function | None -> true | Some v -> v<>amph)
                     || (
                         y<dimy
-                        && seq { y+1..dimy } |> Seq.exists (fun iy -> match st |> Map.tryFind (x,iy) with | None -> false | Some v -> v <> amph)
+                        && seq { y+1..dimy } |> Seq.exists (fun iy -> match st |> Map.tryFind (x,iy) with | None -> true | Some v -> v <> amph)
                     )
                 )
             |> Seq.toList
-
-        let remainingAmphsBadPos = 
-            remainingAmphs |> List.filter (fun (pos,amph) -> tempPos |> List.contains pos)
-
-        let remainingAmphs = if remainingAmphsBadPos.Length>0 then remainingAmphsBadPos else remainingAmphs
 
         let clearAmp = 
             remainingAmphs
@@ -114,12 +92,12 @@ let main argv =
                         //[targetX,2;targetX,3]
                         [ for iy in 2..dimy do yield targetX,iy ]
                         |> List.choose (fun pos -> st |> Map.tryFind pos)
-                        |> List.except [amph;SPACE]
+                        |> List.except [amph]
                         |> List.isEmpty
                     let minx =  min targetX x
                     let maxx = max targetX x
-                    let isClearTop = [minx..maxx] |> List.map (fun x -> (x,1)) |> List.map (fun pos -> st[pos]) |> List.except [SPACE;amph] |> List.isEmpty
-                    let isClearToTop = seq { for iy in 2..y-1 do yield x,iy } |> Seq.forall (fun pos -> st[pos]=SPACE)
+                    let isClearTop = [minx..maxx] |> List.map (fun x -> (x,1)) |> List.choose (fun pos -> st |> Map.tryFind pos) |> List.except [amph] |> List.isEmpty
+                    let isClearToTop = seq { for iy in 2..y-1 do yield x,iy } |> Seq.forall (fun pos -> st.ContainsKey(pos) |> not)
                     isClearGoal && isClearTop && isClearToTop
                 )
             |> List.tryHead
@@ -129,26 +107,26 @@ let main argv =
         match clearAmp with
         | Some((x,y),amph) ->
             let targetX = getTargetX amph
-            let targetY = [ for iy in dimy.. -1..2 do yield targetX,iy] |> List.find (fun pos -> st[pos]=SPACE) |> snd
+            let targetY = [ for iy in dimy.. -1..2 do yield targetX,iy] |> List.find (fun pos -> st.ContainsKey(pos) |> not) |> snd
             let pathLength =
                 if x=targetX then
                     abs (y-targetY)
                 else
                     abs (x-targetX) + abs(y-1) + abs(targetY-1)
             let cost = pathLength * (getCost amph)
-            let nextSt = st |> Map.add (targetX,targetY) amph |> Map.add (x,y) SPACE
+            let nextSt = st |> Map.add (targetX,targetY) amph |> Map.remove (x,y)
             0
             seq { nextSt,cost }
         | None ->
             let r =
                 remainingAmphs
                 |> Seq.filter (fun ((x,y),amph) -> y>1)
-                |> Seq.map 
-                    (fun ((x,y),amph) -> 
+                |> Seq.map (fun ((x,y),amph) -> 
                         let cost = getCost amph
 
                         let allFreeSpacesUp = 
-                            seq { for x in 1..dimx do yield (x,1) }
+                            seq { for x in 1..dimx+2 do yield (x,1) }
+                            |> Seq.except badPos
                             |> Seq.choose (fun targetPos ->
                                 match getPathLength st (x,y) targetPos with
                                 | None -> None
@@ -157,23 +135,22 @@ let main argv =
 
                         allFreeSpacesUp 
                         |>List.map (fun (newPos,len) -> 
-                            let newSt = st|> Map.add newPos amph |> Map.add (x,y) SPACE
+                            let newSt = st|> Map.add newPos amph |> Map.remove (x,y)
                             newSt,cost*len
                             )
                         |>Seq.ofList
                     )
-                    |> Seq.concat
+                |> Seq.concat
             r
     
-    let heuristicGeneric dimx dimy (stN:Map<int*int,BLOCK>) st = 
+    let heuristicGeneric (dimx,dimy) (stN:Map<int*int,BLOCK>) st = 
        
         let totalH = 
             st 
             |> Map.toSeq 
-            |> Seq.filter (fun ((x,y),amph) -> amph <> WALL && amph <> SPACE)
             |> Seq.map (fun ((x,y),amph) -> 
                 let isOnResult = 
-                    let fits = stN[x,y]=amph 
+                    let fits = stN |> Map.tryFind (x,y) |> function | None -> false | Some v -> v=amph 
                     if not fits then false else
                     let bottomFits = [ for iy in y+1..dimy do yield x,iy ] |> List.forall (fun pos -> st[pos]=amph)
                     if not bottomFits then false else true
@@ -187,18 +164,15 @@ let main argv =
             |> Seq.sum
         totalH
 
-    let calcRes st0 =
-        let stN = calcTarget st0
+    let calcRes (st0:Map<int*int,BLOCK>) =
         
-        let dimx = st0.Keys |> Seq.map (fun (x,y) -> x) |> Seq.max
-        let dimy = st0.Keys |> Seq.map (fun (x,y) -> y) |> Seq.max |> fun y -> y-1
-    
+        let dimx = st0 |> Map.toSeq |> Seq.map (fun ((x,y),v) -> x) |> Seq.max
+        let dimy = st0 |> Map.toSeq |> Seq.map (fun ((x,y),v) -> y) |> Seq.max
+        let dims = dimx,dimy
+        let stN = calcTarget dims
 
-
-
-
-        let h = heuristicGeneric dimx dimy stN
-        let doActions = doActionsGeneric dimx dimy stN
+        let h = heuristicGeneric dims stN
+        let doActions = doActionsGeneric dims stN
 
         let r =
             st0
@@ -207,9 +181,6 @@ let main argv =
             |> Seq.head
 
         r.TotalCost
-        // 19176 too high
-
-        // 15160 after 2:10
 
     
     let lns1 = parse inputFile
@@ -226,13 +197,12 @@ let main argv =
             
 
 
-    // 15160 after 0:07
+    // 15160 after 0:03
     let res1 = calcRes lns1
 
-    // 46772 after 1:43
+    // 46772 after 0:25
     let res2 = calcRes lns2
 
-        
     0
     
 
@@ -242,67 +212,3 @@ let main argv =
     0 // return an integer exit code
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    //if tempPos |> List.contains lastMovedTo
-           //then
-           //    let amph = st[lastMovedTo]
-           //    let (x,y) = lastMovedTo
-           //    let cost = getCost amph
-           //    let neighbours = 
-           //        moves
-           //        |> List.map ((+..)lastMovedTo) 
-           //        |> List.filter (fun pos -> st[pos]=SPACE)
-           //        |> List.filter (fun (x2,y2) -> 
-           //            y2 <= y || 
-           //            (
-           //                stN[x2,y2]=amph
-           //                && (stN[x2,y2+1]=WALL || stN[x2,y2+1]=amph)
-           //            ))
-
-           //    neighbours 
-           //    |>List.map (fun newPos -> 
-           //        let newSt = st|> Map.add newPos amph |> Map.add lastMovedTo SPACE
-           //        (newSt,newPos,forceToRoom),cost
-           //        )
-           //    |>Seq.ofList
-           ////elif forceToRoom
-           ////then
-           ////    let amph = st[lastMovedTo]
-           ////    let cost = getCost amph
-           ////    let (x,y) = lastMovedTo
-
-           ////    let targetX = getTargetX amph
-           ////    if [st[targetX,2];st[targetX,3]] |> List.except [SPACE;amph] |> List.isEmpty |> not then Seq.empty else
-
-           ////    let neighbours = 
-           ////        moves 
-           ////        |> List.map ((+..)(x,y)) 
-           ////        |> List.filter (fun pos -> st[pos]=SPACE)
-           ////        |> List.filter (fun (x2,y2) -> 
-           ////            y2 <= y || 
-           ////            (
-           ////                stN[x2,y2]=amph
-           ////                && (stN[x2,y2+1]=WALL || stN[x2,y2+1]=amph || stN[x2,y2+1]=SPACE)
-           ////            )
-           ////            )
-           ////    neighbours 
-           ////    |>List.map (fun newPos -> 
-           ////        let newSt = st|> Map.add newPos amph |> Map.add lastMovedTo SPACE
-           ////        let forceToRoom2 = (newPos |> snd) = 1
-           ////        (newSt,newPos,forceToRoom2),cost
-           ////        )
-
-           ////    |>Seq.ofList
-           //else
