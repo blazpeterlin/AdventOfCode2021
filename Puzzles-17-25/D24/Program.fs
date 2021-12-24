@@ -10,7 +10,7 @@ open Microsoft.Z3
 open Microsoft.Z3.Bool
 open Microsoft.Z3.Int
 open Microsoft.Z3.Real
-open Microsoft.Z3.ArrayZ3
+open Microsoft.Z3.Array
 open Microsoft.Z3.Function
 open Microsoft.Z3.Api
 

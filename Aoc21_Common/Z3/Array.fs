@@ -1,4 +1,4 @@
-﻿module Microsoft.Z3.ArrayZ3
+﻿module Microsoft.Z3.Array
 
 open System
 open Microsoft.Z3
