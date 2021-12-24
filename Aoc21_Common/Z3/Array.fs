@@ -1,4 +1,4 @@
-﻿module Microsoft.Z3.Array
+﻿module Microsoft.Z3.ArrayZ3
 
 open System
 open Microsoft.Z3
@@ -66,7 +66,7 @@ type Array2D<'I, 'O>(expr: ArrayExpr) =
 let Array2DExpr<'I, 'O> expr = Array2D<'I, 'O>(expr)
 let (|Array2DExpr|) (a: Array2D<_, _>) = a.Expr :?> ArrayExpr
 
-let inline Array<'I, 'O when 'I :> Theory and 'O :> Theory and 'O: (static member FromExpr : Expr -> 'O)>
+let inline ArrayZ3<'I, 'O when 'I :> Theory and 'O :> Theory and 'O: (static member FromExpr : Expr -> 'O)>
         (s: string, domain: Sort, range: Sort) = 
     let context = Gs.context()
     context.MkArrayConst(s, domain, range) |> Array2DExpr<'I, 'O>

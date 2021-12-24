@@ -23,6 +23,7 @@ module IntUtils =
   let inline subtract x y = Gs.context().MkSub(x, y) :?> IntExpr |> IntExpr
   let inline multiply x y = Gs.context().MkMul(x, y) :?> IntExpr |> IntExpr
   let inline divide x y = Gs.context().MkDiv(x, y) :?> IntExpr |> IntExpr
+  let inline modulo x y = Gs.context().MkMod(x, y) |> IntExpr
   let inline exp x y =
           let rec loop i acc =
               if i = 0I then acc
@@ -52,6 +53,9 @@ type Int with
   static member (/)(IntExpr x, IntExpr y) = divide x y
   static member (/)(IntExpr x, y) = divide x (createInt y)
   static member (/)(x, IntExpr y) = divide (createInt x) y  
+  static member (%)(IntExpr x, IntExpr y) = modulo x y
+  static member (%)(IntExpr x, y) = modulo x (createInt y)
+  static member (%)(x, IntExpr y) = modulo (createInt x) y  
   static member Pow(IntExpr x, y) = exp x y // use this name instead of ( ** )
   static member (>.)(IntExpr x, IntExpr y) = gt x y
   static member (>.)(IntExpr x, y) = gt x (createInt y)
