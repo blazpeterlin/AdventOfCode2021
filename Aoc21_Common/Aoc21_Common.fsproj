@@ -12,6 +12,7 @@
     <Compile Include="Z3\Int.fs" />
     <Compile Include="Z3\Real.fs" />
     <Compile Include="Z3\Array.fs" />
+    <Compile Include="Z3\Addons.fs" />
     <Compile Include="Z3\BitVec.fs" />
     <Compile Include="Z3\Function.fs" />
     <Compile Include="BinomialHeapPQ.fs" />

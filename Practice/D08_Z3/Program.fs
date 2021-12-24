@@ -1,5 +1,6 @@
 ﻿open System
 open Aoc21_Common
+open Aoc21_Common.Operators
 open FParsec
 open System.Diagnostics
 open System.Collections.Generic
@@ -13,18 +14,9 @@ open Microsoft.Z3.Real
 open Microsoft.Z3.Array
 open Microsoft.Z3.Function
 open Microsoft.Z3.Api
+open Microsoft.Z3.Addons
 
 type ENV = T | P
-let internal (+..) (x0,y0) (x1,y1) = (x0+x1,y0+y1)
-let internal (+...) (x0,y0,z0) (x1,y1,z1) = (x0+x1,y0+y1,z0+z1)
-// Z3 stuff
-let internal (??>) (b:Bool) (expr1:Theory,expr2:Theory) = 
-    match expr1,expr2 with
-    | (:? Bool as b1),(:? Bool as b2) -> createITE (b |> asBoolExpr) (b1 |> asBoolExpr) (b2 |> asBoolExpr)
-    | (:? Int as i1),(:? Int as i2) -> createITE (b |> asBoolExpr) (i1 |> asIntExpr) (i2 |> asIntExpr)
-    | (:? Real as r1),(:? Real as r2) -> createITE (b |> asBoolExpr) (r1 |> asRealExpr) (r2 |> asRealExpr)
-    | _ ->failwith "Failed to match types in ?>"
-let internal (-->) (expr1) (expr2) = (expr1,expr2)
 
 //type State = { Node:string; }
 

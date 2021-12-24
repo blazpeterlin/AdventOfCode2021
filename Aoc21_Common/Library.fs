@@ -2,9 +2,15 @@
 
 open System
 
+
 module Array2D =
     let toListOfLists (arr2d: 'a [,]) = [ yield! [arr2d.GetLowerBound(0)..arr2d.GetUpperBound(0)] |> List.map (fun i -> arr2d.[i,*] |> List.ofArray) ]
 
+module Operators =
+    let (+..) (x0,y0) (x1,y1) = (x0+x1,y0+y1)
+    let (+...) (x0,y0,z0) (x1,y1,z1) = (x0+x1,y0+y1,z0+z1)
+    let (-..) (x0,y0) (x1,y1) = (x0-x1,y0-y1)
+    let (-...) (x0,y0,z0) (x1,y1,z1) = (x0-x1,y0-y1,z0-z1)
 
 module C =
     //let inline (+?) (x: int) (y: int) = x + 2*y

@@ -1,5 +1,6 @@
 ﻿open System
 open Aoc21_Common
+open Aoc21_Common.Operators
 open FParsec
 open System.Diagnostics
 open System.Collections.Generic

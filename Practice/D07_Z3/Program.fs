@@ -1,5 +1,6 @@
 ﻿open System
 open Aoc21_Common
+open Aoc21_Common.Operators
 //open FParsec
 open System.Diagnostics
 open System.Collections.Generic
@@ -14,8 +15,6 @@ open Microsoft.Z3.Int
 open Microsoft.Z3.Real
 
 type ENV = T | P
-let internal (+..) (x0,y0) (x1,y1) = (x0+x1,y0+y1)
-let internal (+...) (x0,y0,z0) (x1,y1,z1) = (x0+x1,y0+y1,z0+z1)
 
 // type State = { EL:int; }
 
