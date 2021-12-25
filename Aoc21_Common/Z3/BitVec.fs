@@ -12,10 +12,11 @@ type BitVec(expr: BitVecExpr) =
 
 let BitVecExpr expr = BitVec(expr)
 let (|BitVecExpr|) (bv: BitVec) = bv.Expr :?> BitVecExpr
+let asBvExpr i = i |> function | BitVecExpr ie -> ie
 
 [<AutoOpen>]
 module internal BitVecUtils =
-    let inline createBitVec (v: int) (size: uint32) = Gs.context().MkBV(v, size)
+    let inline createBitVec (v: int64) (size: uint32) = Gs.context().MkBV(v, size)
     let inline add x y = Gs.context().MkBVAdd(x, y) |> BitVecExpr
     let inline subtract x y = Gs.context().MkBVSub(x, y) |> BitVecExpr
     let inline multiply x y = Gs.context().MkBVMul(x, y) |> BitVecExpr
@@ -110,9 +111,22 @@ type BitVec with
     static member (>>>~)(BitVecExpr x, y) = lshr x (createBitVec y x.SortSize)
     static member (>>>~)(x, BitVecExpr y) = lshr (createBitVec x y.SortSize) y
 
-let BitVec(name: string, size: uint32) =
-  let context = Gs.context()
-  context.MkBVConst(name, size) |> BitVecExpr
+let BitVec (size:obj) (name: string) =
+    let sizeUnsigned =
+        match size with
+        | :? uint32 as sizeUI -> sizeUI
+        | :? int32 as sizeI -> sizeI |> uint32
+        | :? bigint as sizeBI -> sizeBI |> uint32
+        | _ -> failwith "unsupported type for size"
+    let context = Gs.context()
+    context.MkBVConst(name, sizeUnsigned) |> BitVecExpr
 
-let BitVecVal(v: int, size: uint32) =
-  createBitVec v size :> BitVecExpr |> BitVecExpr
+let BitVecVal (size: obj) (v: int) =
+    let sizeUnsigned =
+        match size with
+        | :? uint32 as sizeUI -> sizeUI
+        | :? int32 as sizeI -> sizeI |> uint32
+        | :? bigint as sizeBI -> sizeBI |> uint32
+        | _ -> failwith "unsupported type for size"
+
+    createBitVec v sizeUnsigned :> BitVecExpr |> BitVecExpr

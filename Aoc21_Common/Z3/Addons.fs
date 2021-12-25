@@ -5,6 +5,7 @@ open Microsoft.Z3
 open Microsoft.Z3.Bool
 open Microsoft.Z3.Int
 open Microsoft.Z3.Real
+open Microsoft.Z3.BitVec
 
 type Opt() =
     let o:Optimize = Gs.context().MkOptimize()
@@ -23,5 +24,6 @@ let (??>)<'A when 'A :> Theory> (b:Bool)  (expr1:'A,expr2:'A) : 'A =
     | (:? Bool as b1),(:? Bool as b2) -> BoolUtils.createITE (b |> asBoolExpr) (b1 |> asBoolExpr) (b2 |> asBoolExpr) |> (fun res -> res :> obj :?> 'A)
     | (:? Int as i1),(:? Int as i2) -> IntUtils.createITE (b |> asBoolExpr) (i1 |> asIntExpr) (i2 |> asIntExpr) |> (fun res -> res :> obj :?> 'A)
     | (:? Real as r1),(:? Real as r2) -> RealUtils.createITE (b |> asBoolExpr) (r1 |> asRealExpr) (r2 |> asRealExpr) |> (fun res -> res :> obj :?> 'A)
+    | (:? BitVec as bv1),(:? BitVec as bv2) -> BitVecUtils.createITE (b |> asBoolExpr) (bv1 |> asBvExpr) (bv2 |> asBvExpr) |> (fun res -> res :> obj :?> 'A)
     | _ ->failwith "Failed to match types in ?>"
 let (-->) (expr1) (expr2) = (expr1,expr2)

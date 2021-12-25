@@ -11,6 +11,7 @@ open Microsoft.Z3
 open Microsoft.Z3.Bool
 open Microsoft.Z3.Int
 open Microsoft.Z3.Real
+open Microsoft.Z3.BitVec
 open Microsoft.Z3.Array
 open Microsoft.Z3.Function
 open Microsoft.Z3.Api
@@ -34,40 +35,42 @@ let main argv =
         |> List.map (
             fun (lns:string list list) -> 
                 lns[4][2]::lns[5][2]::lns[15][2]::[]
-                |> List.map (bigint.Parse)
+                |> List.map int64
             )
     0
     let lns = parse inputFile
+
+    // how many bits are needed to represent a 10^14
+    let maxnum = pown 10L 14
+    let BITS = log (maxnum |> float) / log (2.0) |> ceil |> int
+    let zint = BitVec BITS
+    let zval = BitVecVal BITS
+    0
     
     let solveFor optimizeFor =
         
-        let varZ = Int "z0"
-        let varInputs = [ for x in 1..lns.Length do yield Int ("inp"+x.ToString()) ]
+        let varZ = zint "z0"
+        let varInputs = [ for x in 1..lns.Length do yield zint("inp"+x.ToString()) ]
 
         let opt = Opt()
-        opt.Add(varZ =. 0I)
+        opt.Add(varZ =. 0L)
 
-        let addLn ((inp::inptail):Int list,z:Int) (n1::n2::n3::[] : bigint list) =
+        let addLn ((inp::inptail):BitVec list,z:BitVec) (n1::n2::n3::[] : int64 list) =
             let resZ = 
-                if n2 <= 9
-                then // x = 0
-                    opt.Add(z%26I + n2 =. inp)
-                    z/n1
-                else // x = 1
-                    opt.Add(z%26I + n2 <>. inp)
-                    z/n1 * 26I + inp + n3
+                let x =  z%26L + n2 =. inp   ??>  zval 0  -->   zval 1
+                z/n1 + x * (z/n1 * 25L + inp + n3)
             inptail, resZ
 
         let (finalInp,finalZ) = lns |> List.fold addLn (varInputs,varZ)
 
-        opt.Add(finalZ =. 0I)
+        opt.Add(finalZ =. 0L)
     
         for inp in varInputs do
-            opt.Add(inp >=. 1I)
-            opt.Add(inp <=. 9I)
+            opt.Add(inp >=. 1L)
+            opt.Add(inp <=. 9L)
 
         let totalInputExpr = 
-            varInputs |> List.fold (fun acc inp -> (acc * 10I) + inp) (IntVal(0I))
+            varInputs |> List.fold (fun acc inp -> (acc * 10L) + inp) (zval 0)
 
         match optimizeFor with
         | MINIMUM -> opt.Minimize(totalInputExpr)
