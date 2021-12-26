@@ -48,7 +48,7 @@ let main argv =
                 yield zIsInRange
         |]
 
-    let zDronesInRangeSum = ArrayVal1D_Int zDrones |> Array1D.Z3SUM_Int
+    let zDronesInRangeSum = ArrayVal1D zDrones |> Array1D.SUM
     
     opt.Maximize(zDronesInRangeSum)
     opt.Minimize(varX + varY + varZ)

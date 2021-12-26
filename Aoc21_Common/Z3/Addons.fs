@@ -17,6 +17,8 @@ type Opt() =
     member Opt.Minimize (th:Theory) = o.MkMinimize(th.Expr) |> ignore
     member Opt.Eval (th:Theory) = o.Model.Eval(th.Expr)
     member Opt.Model = o.Model
+    member Opt.Push = o.Push
+    member Opt.Pop = o.Pop
     
 // Z3 if-then-else  (a ??> b --> c)
 let (??>)<'A when 'A :> Theory> (b:Bool)  (expr1:'A,expr2:'A) : 'A = 

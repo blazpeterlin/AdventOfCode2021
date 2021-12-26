@@ -5,56 +5,51 @@ open Microsoft.Z3
 open Microsoft.Z3.Bool
 open Microsoft.Z3.Int
 open Microsoft.Z3.Real
+open Microsoft.Z3.BitVec
 
 
 
 
 
 //let mutable counter = -1
-type Array1D(expr : Theory array) =
+type Array1D<'T when 'T :> Theory>(expr : 'T array) =
 
     member val Expr = expr
     override x.ToString() = sprintf "%O" expr 
-    (*(|++|)*) 
-    static member (=.) (a1: Array1D, a2: Array1D) =
+    static member (=.) (a1: Array1D<'T>, a2: Array1D<'T>) =
         let ctx = Gs.context()
         a1.Expr |> Array.zip a2.Expr
         |> Array.map (fun (elt1,elt2) -> ctx.MkEq(elt1.Expr, elt2.Expr))
         |> Array.map BoolExpr
         |> Array.map (fun x -> x :> Theory)
         |> Array1D
-    static member Z3DISTINCT (a1: Array1D) =
+    static member DISTINCT (a1: Array1D<'T>) =
         Gs.context().MkDistinct(a1.Expr |> Array.map (fun x -> x.Expr)) |> BoolExpr
-    static member Z3SUM_Int (a1: Array1D) =
+    static member SUM_Int (a1: Array1D<'T>) =
         Gs.context().MkAdd(a1.Expr |> Array.map (fun x -> x.Expr :?> ArithExpr)) :?> IntExpr |> IntExpr
-    static member Z3SUM_Real (a1: Array1D) =
-        Gs.context().MkAdd(a1.Expr |> Array.map (fun x -> x.Expr :?> ArithExpr)) :?> RealExpr |> RealExpr
-    //static member Z3SUM_BitVec (a1: Array1D) =
-    //    Gs.context().MkBitVecAdd(a1.Expr |> Array.map (fun x -> x.Expr :?> ArithExpr)) :?> BitVecExpr |> BitVecExpr
-    static member Z3OR (a1: Array1D) =
+    static member SUM_Real (a1: Array1D<'T>) =
+        Gs.context().MkAdd(a1.Expr |> Array.map (fun x -> x.Expr :?> ArithExpr)) :?> RealExpr |> RealExpr   
+    static member SUM_BitVec (a1: Array1D<'T>) =
+        let ctx = Gs.context()
+        let allBVs = a1.Expr |> Array.map (fun x -> x.Expr :?> BitVecExpr)
+        allBVs |> Array.reduce (fun x y -> ctx.MkBVAdd(x,y)) |> BitVecExpr
+    static member SUM (a1: Array1D<'T>) =
+        match box a1 with
+        | :? Array1D<Int> as arrInt -> Array1D.SUM_Int(arrInt) :> obj :?> 'T
+        | :? Array1D<Real> as arrReal -> Array1D.SUM_Real(arrReal) :> obj :?> 'T
+        | :? Array1D<BitVec> as arrBV -> Array1D.SUM_BitVec(arrBV) :> obj :?> 'T
+        | _ -> failwith "SUM on this type not supported"
+    static member OR (a1: Array1D<'T>) =
         Gs.context().MkOr(a1.Expr |> Array.map (fun x -> x.Expr :?> BoolExpr)) |> BoolExpr
-    static member Z3AND (a1: Array1D) =
+    static member AND (a1: Array1D<'T>) =
         Gs.context().MkAnd(a1.Expr |> Array.map (fun x -> x.Expr :?> BoolExpr)) |> BoolExpr
-    static member Z3XOR (a1: Array1D) =
+    static member XOR (a1: Array1D<'T>) =
         Gs.context().MkXor(a1.Expr |> Array.map (fun x -> x.Expr :?> BoolExpr)) |> BoolExpr
 
 
 
-let ArrayVal1D (theories: Theory array) = 
+let ArrayVal1D (theories: 'T array) = 
   Array1D (theories)
-  
-let ArrayVal1D_Bool (theories: Bool array) =
-    let castedTheories = theories |> Array.map (fun x -> x :> Theory)
-    Array1D castedTheories
-    
-let ArrayVal1D_Int (theories: Int array) =
-      let castedTheories = theories |> Array.map (fun x -> x :> Theory)
-      Array1D castedTheories
-      
-let ArrayVal1D_Real (theories: Real array) =
-        let castedTheories = theories |> Array.map (fun x -> x :> Theory)
-        Array1D castedTheories
-  
 
 
 type Array2D<'I, 'O>(expr: ArrayExpr) = 

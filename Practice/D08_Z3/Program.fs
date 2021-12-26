@@ -11,6 +11,7 @@ open Microsoft.Z3
 open Microsoft.Z3.Bool
 open Microsoft.Z3.Int
 open Microsoft.Z3.Real
+open Microsoft.Z3.BitVec
 open Microsoft.Z3.Array
 open Microsoft.Z3.Function
 open Microsoft.Z3.Api
@@ -36,21 +37,93 @@ let main argv =
     let resetCtx () = Gs.overrideContext(Dictionary<string,string>())
 
     let ctx = resetCtx()
-    let a,b,c,d,e,f,g = Int "a", Int "b", Int "c", Int "d", Int "e", Int "f", Int "g"
-    let xa,xb,xc,xd,xe,xf,xg = Int "xa", Int "xb", Int "xc", Int "xd", Int "xe", Int "xf", Int "xg"
-    let v0,v1,v2,v3,v4,v5,v6,v7,v8,v9= Int "v0", Int "v1", Int "v2", Int "v3", Int "v4", Int "v5", Int "v6", Int "v7", Int "v8", Int "v9"
 
-    let rule0 = a+b+c+e+f+g =. v0
-    let rule1 = c+f =. v1
-    let rule2 = a+c+d+e+g =. v2
-    let rule3 = a+c+d+f+g =. v3
-    let rule4 = b+c+d+f =. v4
-    let rule5 = a+b+d+f+g =. v5
-    let rule6 = a+b+d+e+f+g =. v6
-    let rule7 = a+c+f =. v7
-    let rule8 = a+b+c+d+e+f+g =. v8
-    let rule9 = a+b+c+d+f+g =. v9
+    let zsig = BitVec 7
+    let zval = BitVecVal 7
+    
+    let names = "abcdefg"
+    
+    let chars = [0..6] |> List.map (fun i -> (1 <<< i) |> fun v -> (names[i],zval v)) |> Map.ofList
+    let digits = [0..9] |> List.map (fun i -> i,zsig ("dig_"+i.ToString())) |> Map.ofList
+    let realCharArr = chars.Values |> Array.ofSeq |> ArrayVal1D
+    
+    let opt = Opt()
+        
+    let mkRule dgt (str:string)  =
+        let bvSumSegments = str.ToCharArray() |> List.ofArray |> List.map (fun ch -> chars[ch]) |> List.reduce (+)
+        let bvDigit = digits[dgt]
+        bvSumSegments =. bvDigit
 
+    opt.Add(mkRule 0 "abcefg")
+    opt.Add(mkRule 1 "cf")
+    opt.Add(mkRule 2 "acdeg")
+    opt.Add(mkRule 3 "acdfg")
+    opt.Add(mkRule 4 "bcdf")
+    opt.Add(mkRule 5 "abdfg")
+    opt.Add(mkRule 6 "abdefg")
+    opt.Add(mkRule 7 "acf")
+    opt.Add(mkRule 8 "abcdefg")
+    opt.Add(mkRule 9 "abcdfg")
+
+    let iteratedResults = [
+        for idx,(segments, outputVals) in (lns |> List.indexed) do
+            opt.Push()
+
+            let iterChars = names.ToCharArray() |> List.ofArray |> List.map (fun ch -> ch, zsig (ch.ToString() + "_" + idx.ToString())) |> Map.ofList
+            let iterCharArr = iterChars.Values |> Seq.toArray |> ArrayVal1D
+
+            opt.Add (iterCharArr |> Array1D.DISTINCT)
+            let rulesCharBijection = [|
+                    for ic in iterCharArr.Expr do
+                        realCharArr.Expr |> Array.map (fun rc -> ic =. rc) |> ArrayVal1D |> Array1D.OR                    
+                |]
+            opt.Add (rulesCharBijection |> ArrayVal1D |> Array1D.AND)
+
+            for seg in segments do
+                let sumSeg = seg.ToCharArray() |> Array.map (fun ch -> iterChars[ch]) |> Array.reduce (fun ch1 ch2 -> ch1 + ch2)
+                let ruleOneOfDigits = digits.Values |> Seq.map (fun dgt -> sumSeg =. dgt) |> Array.ofSeq |> ArrayVal1D |> Array1D.OR
+                opt.Add ruleOneOfDigits
+
+            opt.CheckOrFail()
+
+            let intEval bv = opt.Eval bv |> fun x -> x.ToString() |> int
+
+            let digitByTotal = 
+                seq {
+                    for num, digitBV in digits |> Map.toSeq do
+                        let total = intEval digitBV
+                        yield total, num
+                }
+                |> Map.ofSeq
+
+            let outputNum = 
+                seq {
+                    for oval in outputVals do
+                        let digitTotal = 
+                            oval.ToCharArray() 
+                            |> Array.map (fun ch -> iterChars[ch]) 
+                            |> ArrayVal1D |> Array1D.SUM
+                            |> intEval
+                        let digit = digitByTotal[digitTotal]
+                        digit
+                }
+                |> Seq.fold (fun x y -> x*10+y) 0
+
+            opt.Pop()
+
+            yield outputNum
+        ]
+
+
+    let res1 = 
+        iteratedResults 
+        |> List.map string 
+        |> List.map (fun str -> str.ToCharArray() |> List.ofArray |> List.map string |> List.map int)
+        |> List.concat
+        |> List.filter (fun x -> [1;4;7;8] |> List.contains x)
+        |> List.length
+
+    let res2 = iteratedResults |> List.sum
 
 
     0
