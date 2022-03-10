@@ -25,11 +25,11 @@ type Array1D<'T when 'T :> Theory>(expr : 'T array) =
         |> Array1D
     static member DISTINCT (a1: Array1D<'T>) =
         Gs.context().MkDistinct(a1.Expr |> Array.map (fun x -> x.Expr)) |> BoolExpr
-    static member SUM_Int (a1: Array1D<'T>) =
+    static member private SUM_Int (a1: Array1D<'T>) =
         Gs.context().MkAdd(a1.Expr |> Array.map (fun x -> x.Expr :?> ArithExpr)) :?> IntExpr |> IntExpr
-    static member SUM_Real (a1: Array1D<'T>) =
+    static member private SUM_Real (a1: Array1D<'T>) =
         Gs.context().MkAdd(a1.Expr |> Array.map (fun x -> x.Expr :?> ArithExpr)) :?> RealExpr |> RealExpr   
-    static member SUM_BitVec (a1: Array1D<'T>) =
+    static member private SUM_BitVec (a1: Array1D<'T>) =
         let ctx = Gs.context()
         let allBVs = a1.Expr |> Array.map (fun x -> x.Expr :?> BitVecExpr)
         allBVs |> Array.reduce (fun x y -> ctx.MkBVAdd(x,y)) |> BitVecExpr

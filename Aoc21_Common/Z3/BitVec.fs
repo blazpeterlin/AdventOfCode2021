@@ -68,9 +68,9 @@ type BitVec with
     static member (&&&)(BitVecExpr x, BitVecExpr y) = bvand x y
     static member (&&&)(BitVecExpr x, y) = bvand x (createBitVec y x.SortSize)
     static member (&&&)(x, BitVecExpr y) = bvand (createBitVec x y.SortSize) y
-    static member (|||)(BitVecExpr x, BitVecExpr y) = bvor x y
-    static member (|||)(BitVecExpr x, y) = bvor x (createBitVec y x.SortSize)
-    static member (|||)(x, BitVecExpr y) = bvor (createBitVec x y.SortSize) y
+    static member (||.)(BitVecExpr x, BitVecExpr y) = bvor x y
+    static member (||.)(BitVecExpr x, y) = bvor x (createBitVec y x.SortSize)
+    static member (||.)(x, BitVecExpr y) = bvor (createBitVec x y.SortSize) y
     static member (~~~)(BitVecExpr x) = bvnot x 
     static member (>.)(BitVecExpr x, BitVecExpr y) = gt x y
     static member (>.)(BitVecExpr x, y) = gt x (createBitVec y x.SortSize)

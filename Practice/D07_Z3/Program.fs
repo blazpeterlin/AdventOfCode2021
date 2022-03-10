@@ -54,7 +54,7 @@ let main argv =
 
     let mappedRes =
         match z3res with
-        | NoSolution | Unknown -> failwith ("fail " + z3res.ToString())
+        | NoSolution(_) | Unknown -> failwith ("fail " + z3res.ToString())
         | Solution(sfrs) ->
             let m = sfrs |> List.map (fun (s,f,r) -> (s.ToString(), getValDouble r)) |> Map.ofList
             m

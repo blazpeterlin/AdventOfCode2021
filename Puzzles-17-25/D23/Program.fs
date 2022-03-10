@@ -69,6 +69,13 @@ let main argv =
         else None
         
     let badPos = [3,1;5,1;7,1;9,1]
+
+    let allPos = 
+        [ for x in 1..11 do yield x,1 ]
+        |> List.append [ for y in 2..5 do yield! [3,y;5,y;7,y;9,y]]
+        |> List.except badPos
+        //|> List.indexed
+    let indexedPosCount = allPos |> List.length |> int64
     
     let doActionsGeneric (dimx,dimy) (stN:Map<int*int,BLOCK>) (st:Map<int*int,BLOCK>) =
         let usefulSt = st |> Map.toList
@@ -144,25 +151,28 @@ let main argv =
             r
     
     let heuristicGeneric (dimx,dimy) (stN:Map<int*int,BLOCK>) st = 
-       
-        let totalH = 
-            st 
-            |> Map.toSeq 
-            |> Seq.map (fun ((x,y),amph) -> 
-                let isOnResult = 
-                    let fits = stN |> Map.tryFind (x,y) |> function | None -> false | Some v -> v=amph 
-                    if not fits then false else
-                    let bottomFits = [ for iy in y+1..dimy do yield x,iy ] |> List.forall (fun pos -> st[pos]=amph)
-                    if not bottomFits then false else true
+        0
+        //let totalH = 
+        //    st 
+        //    |> Map.toSeq 
+        //    |> Seq.map (fun ((x,y),amph) -> 
+        //        let fits,bottomFits = 
+        //            let fits = stN |> Map.tryFind (x,y) |> function | None -> false | Some v -> v=amph 
+        //            if not fits then false,false else
+        //            let bottomFits = [ for iy in y+1..dimy do yield x,iy ] |> List.forall (fun pos -> st[pos]=amph)
+        //            if not bottomFits then false,true else true,true
 
-                if isOnResult
-                then
-                    0
-                else
-                    1 * (getCost amph)
-                )
-            |> Seq.sum
-        totalH
+        //        if fits && bottomFits then 0 else
+        //        let cost = getCost amph
+        //        if fits then y*2*cost else
+        //        let targetX = getTargetX amph
+        //        let moveUpLen = y-1
+        //        let moveSidewaysLen = abs(x-targetX)
+        //        let moveDownLen = seq { dimy.. -1..2 } |> Seq.filter (fun iy -> st |> Map.tryFind (targetX,iy) |> (<>) (Some amph)) |> Seq.head |> fun iy -> iy/2
+        //        cost * (moveUpLen+moveSidewaysLen+moveDownLen)
+        //    )
+        //    |> Seq.sum
+        //totalH
 
     let calcRes (st0:Map<int*int,BLOCK>) =
         
@@ -174,9 +184,17 @@ let main argv =
         let h = heuristicGeneric dims stN
         let doActions = doActionsGeneric dims stN
 
+
+        // doesn't seem to help much?
+        let map2state (m:Map<int*int,BLOCK>) : int64 =
+            allPos 
+            |> Seq.map (fun pos -> match Map.tryFind pos m with | None -> 0L | Some(AMPH(A)) -> 1L |  Some(AMPH(B)) -> 2L | Some(AMPH(C))-> 3L |  Some(AMPH(D))-> 4L | _ -> failwith "huh")
+            |> Seq.fold (fun a b -> a*5L+b) 0L
+            //m |> Map.toSeq |> Seq.sortBy snd |> Seq.map fst |> Seq.map (fun pos -> indexedPos[pos]) |> Seq.fold (fun a b -> a*indexedPosCount+(int64 b)) 0L
+
         let r =
             st0
-            |> AStar.unfold true doActions h id (fun x -> x.State = stN)
+            |> AStar.unfold true doActions h map2state (fun x -> x.State = stN)
             |> Seq.filter (fun x -> x.IsGoal)
             |> Seq.head
 
@@ -203,8 +221,8 @@ let main argv =
     // 46772 after 0:25
     let res2 = calcRes lns2
 
-    0
-    
+    0    
+
 
     0
 

@@ -75,7 +75,7 @@ type Microsoft.Z3.Model with
     x.Evaluate(v.Expr, defaultArg modelCompletion false)
 
 type SolveResult =
-  | NoSolution
+  | NoSolution of (Expr)
   | Unknown
   | Solution of (Symbol * FuncDecl * Result) list
 
@@ -96,7 +96,8 @@ module Solver =
     | Status.UNKNOWN ->
       Unknown
     | Status.UNSATISFIABLE ->
-      NoSolution
+        let proof = solver.Proof
+        NoSolution(proof)
     | x -> failwithf "unknown enum value %O" x
 
   let check (solver : Solver) =

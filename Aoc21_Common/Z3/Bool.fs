@@ -56,6 +56,8 @@ type Bool with
 
 let IIF_Bool(BoolExpr b, BoolExpr expr1, BoolExpr expr2) = createITE b expr1 expr2
 
+let BoolVal b = BoolUtils.createBool
+
 /// Return a bool const with supplied name
 let Bool(s: string) = 
   let context = Gs.context()
@@ -109,9 +111,10 @@ type Z3 =
   static member Solve ([<ParamArray>] xs: _ []) : SolveResult =
     let solver = Gs.context() |> Solver.create
     xs |> Solver.assert_range solver
+    
     let sol = Solver.check solver
     match sol with
-    | NoSolution
+    | NoSolution(_)
     | Unknown ->
       printfn "no solution"
     | Solution solutions ->

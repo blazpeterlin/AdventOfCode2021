@@ -11,6 +11,8 @@ type Opt() =
     let o:Optimize = Gs.context().MkOptimize()
     member Opt.Add (b:Bool) = 
         o.Add(b |> asBoolExpr) |> ignore
+    member Opt.AddAll (bs:Bool seq) = 
+        bs |> Seq.iter (fun b -> Opt.Add b)
     member Opt.Check() = o.Check()
     member Opt.CheckOrFail() = o.Check() |> function | Status.UNSATISFIABLE -> failwith "unsatisfiable" | Status.UNKNOWN -> failwith "unknown" | Status.SATISFIABLE -> () |> ignore | huh -> failwith "huh"
     member Opt.Maximize (th:Theory) = o.MkMaximize(th.Expr) |> ignore
